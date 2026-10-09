@@ -1,0 +1,124 @@
+[project]
+name = "course-service"
+version = "0.1.0"
+description = "Course service description"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic==1.20.0",
+    "fastapi==0.141.1",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "pyyaml==6.0.3",
+    "sqlalchemy==2.0.54",
+    "uvicorn==0.53.0",
+]
+
+[dependency-groups]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+lint = [
+    "black==26.5.1",
+    "isort==9.0.1",
+    "mypy==2.3.1",
+    "pylint==4.0.8",
+    "radon==6.0.1",
+    "ruff==0.16.8",
+]
+test = [
+    "aiosqlite==0.22.1",
+    "httpx2==2.13.0",
+    "locust==2.46.5",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+src_paths = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[radon]
+exclude = "tests/*,venv/*,.venv/*"
+cc_min = "B"
+show_complexity = true
+average = true
+
+[tool.pylint.main]
+py-version = "3.12"
+source-roots = ["."]
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "Run", "_", "f", "app"]
+
+[tool.pylint.classes]
+defining-attr-methods = ["__init__", "__new__", "setUp"]
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.imports]
+known-third-party = ["fastapi", "pydantic", "uvicorn", "sqlalchemy"]
+
+[tool.pylint.logging]
+logging-modules = ["logging"]
+
+[tool.pylint.method_args]
+timeout-methods = ["requests.api.patch", "requests.api.post", "requests.api.get"]
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-few-public-methods",
+    "unused-argument",
+]
+
+[tool.pylint.reports]
+output-format = "text"
+reports = false
+score = true
+
+[tool.pylint.spelling]
+spelling-dict = ""
+
+[tool.pylint.typecheck]
+ignored-modules = ["pydantic"]
+
+[tool.pylint.variables]
+init-import = false
+dummy-variables-rgx = "_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)"
