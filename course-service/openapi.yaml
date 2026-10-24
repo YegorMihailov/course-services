@@ -1,0 +1,767 @@
+openapi: 3.0.3
+info:
+  title: Course Service API
+  version: 1.0.0
+  description: Микросервис управления учебными курсами, заданиями и проверкой решений.
+
+servers:
+  - url: http://127.0.0.1:8888
+    description: Локальный сервер разработки
+
+tags:
+  - name: Courses
+    description: Управление учебными курсами
+  - name: Assignments
+    description: Управление заданиями в рамках курса
+  - name: Submissions
+    description: Отправка и проверка решений
+
+paths:
+  /api/v1/courses:
+    get:
+      tags: [Courses]
+      summary: Получить список доступных курсов
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        "200":
+          description: Список курсов успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseList'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Courses]
+      summary: Создать новый курс
+      description: Доступно только администратору (Admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreate'
+      responses:
+        "201":
+          description: Курс успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/courses/{id}:
+    get:
+      tags: [Courses]
+      summary: Получить информацию о курсе
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Данные курса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Courses]
+      summary: Частично обновить данные курса
+      description: Доступно администратору и закрепленному преподавателю
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseUpdate'
+      responses:
+        "200":
+          description: Курс успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Courses]
+      summary: Удалить курс
+      description: Доступно только администратору
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Курс успешно удален
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/assignments/:
+    get:
+      tags: [Assignments]
+      summary: Получить список заданий
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: course_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Список заданий получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Assignments]
+      summary: Создать новое задание
+      description: Доступно администратору и преподавателю
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreate'
+      responses:
+        "201":
+          description: Задание создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/assignments/{id}:
+    get:
+      tags: [Assignments]
+      summary: Получить условие задания
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Условие задания получено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Assignments]
+      summary: Частично обновить задание
+      description: Доступно администратору и преподавателю курса
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentUpdate'
+      responses:
+        "200":
+          description: Задание успешно обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Assignments]
+      summary: Удалить задание
+      description: Доступно администратору и преподавателю
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Задание удалено
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/submissions/:
+    post:
+      tags: [Submissions]
+      summary: Отправить решение на проверку
+      description: Доступно только студенту (Student)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreate'
+      responses:
+        "201":
+          description: Решение успешно принято
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/submissions/{id}:
+    get:
+      tags: [Submissions]
+      summary: Получить информацию о сдаче
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Детали отправленного решения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/submissions/{id}/artifacts:
+    get:
+      tags: [Submissions]
+      summary: Получить артефакты сборки и логов тестирования
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Ссылка на скачивание артефактов получена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifacts_url:
+                    type: string
+                    format: uri
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/submissions/{id}/review:
+    get:
+      tags: [Submissions]
+      summary: Получить рецензию и оценку работы
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Данные рецензии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Submissions]
+      summary: Создать рецензию и выставить оценку
+      description: Доступно преподавателю после наступления дедлайна
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      responses:
+        "201":
+          description: Рецензия успешно выставлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Submissions]
+      summary: Частично изменить рецензию или оценку
+      description: Доступно преподавателю курса
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdate'
+      responses:
+        "200":
+          description: Рецензия успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      description: Количество элементов
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Offset:
+      name: offset
+      in: query
+      description: Смещение от начала
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Ключ идемпотентности
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CourseCreate:
+      type: object
+      required: [title, description, teacher_id, status]
+      properties:
+        title:
+          type: string
+          minLength: 15
+          maxLength: 255
+        description:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        teacher_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ACTIVE, CLOSED, DRAFT]
+
+    CourseUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 15
+          maxLength: 255
+        description:
+          type: string
+          minLength: 32
+          maxLength: 4096
+        teacher_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [ACTIVE, CLOSED, DRAFT]
+
+    Course:
+      allOf:
+        - $ref: '#/components/schemas/CourseCreate'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    AssignmentCreate:
+      type: object
+      required: [title, description, course_id, attempts_limit, date_start, date_end, materials_url]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        course_id:
+          type: string
+          format: uuid
+        attempts_limit:
+          type: integer
+          minimum: 3
+          maximum: 10
+        date_start:
+          type: string
+          format: date
+        date_end:
+          type: string
+          format: date
+        materials_url:
+          type: string
+          format: uri
+
+    AssignmentUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        course_id:
+          type: string
+          format: uuid
+        attempts_limit:
+          type: integer
+          minimum: 3
+          maximum: 10
+        date_start:
+          type: string
+          format: date
+        date_end:
+          type: string
+          format: date
+        materials_url:
+          type: string
+          format: uri
+
+    Assignment:
+      allOf:
+        - $ref: '#/components/schemas/AssignmentCreate'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    SubmissionCreate:
+      type: object
+      required: [assignment_id, repository_url]
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+        repository_url:
+          type: string
+          format: uri
+
+    Submission:
+      allOf:
+        - $ref: '#/components/schemas/SubmissionCreate'
+        - type: object
+          required: [id, submitted_at, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+            submitted_at:
+              type: string
+              format: date-time
+            status:
+              type: string
+              enum: [SUBMITTED, PROCESSING, COMPLETED, FAILED]
+            artifacts_url:
+              type: string
+              format: uri
+              nullable: true
+            review_id:
+              type: string
+              format: uuid
+              nullable: true
+
+    ReviewCreate:
+      type: object
+      required: [type, feedback, rank, status]
+      properties:
+        type:
+          type: string
+          enum: [auto, manual]
+        feedback:
+          type: string
+        rank:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 10.0
+        status:
+          type: string
+          enum: [PASSED, FAILED]
+
+    ReviewUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [auto, manual]
+        feedback:
+          type: string
+        rank:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 10.0
+        status:
+          type: string
+          enum: [PASSED, FAILED]
+
+    Review:
+      allOf:
+        - $ref: '#/components/schemas/ReviewCreate'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    Pagination:
+      type: object
+      required: [offset, limit, total]
+      properties:
+        offset:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    CourseList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Error:
+      type: object
+      required: [code, message, status, path, request_id]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        status:
+          type: integer
+        path:
+          type: string
+        request_id:
+          type: string
+          format: uuid
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации или нарушение бизнес-правил
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Отсутствует или недействителен токен
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Недостаточно прав для выполнения операции
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Запрашиваемый ресурс не найден
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Error'
